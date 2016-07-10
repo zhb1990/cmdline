@@ -36,7 +36,11 @@
 #include <typeinfo>
 #include <cstring>
 #include <algorithm>
+#if (defined(_MSC_VER))
+#else
 #include <cxxabi.h>
+#endif
+
 #include <cstdlib>
 
 namespace cmdline{
@@ -104,11 +108,15 @@ Target lexical_cast(const Source &arg)
 
 static inline std::string demangle(const std::string &name)
 {
-  int status=0;
-  char *p=abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-  std::string ret(p);
-  free(p);
-  return ret;
+#if (defined(_MSC_VER))
+	return name;
+#else
+	int status = 0;
+	char *p = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
+	std::string ret(p);
+	free(p);
+	return ret;
+#endif
 }
 
 template <class T>
@@ -533,7 +541,7 @@ public:
   void parse_check(const std::vector<std::string> &args){
     if (!options.count("help"))
       add("help", '?', "print this message");
-    check(args.size(), parse(args));
+    check((int)args.size(), parse(args));
   }
 
   void parse_check(int argc, char *argv[]){
@@ -563,7 +571,7 @@ public:
     
     oss<<"[options] ... "<<ftr<<std::endl;
     oss<<"options:"<<std::endl;
-
+	
     size_t max_width=0;
     for (size_t i=0; i<ordered.size(); i++){
       max_width=std::max(max_width, ordered[i]->name().length());
